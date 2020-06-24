@@ -82,7 +82,7 @@ def get_rated(driver):
 def main():
     """main function"""
 
-    download_dir = os.getcwd()
+    download_dir = os.path.dirname(os.path.abspath(__file__))
     file_name = "NetflixViewingHistory.csv"
 
     options = Options()
@@ -106,6 +106,7 @@ def main():
     download_seen(driver)
 
     # On attend la fin du téléchargement pour fermer le driver
+    # Si le fichier est déjà présent, il n'a pas le temps d'être téléchargé
     while not os.path.exists(download_dir + "/" + file_name):
         print(f"Fichier téléchargé: {download_dir}/{file_name}")
         time.sleep(1)
