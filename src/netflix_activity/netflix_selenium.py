@@ -6,22 +6,24 @@ netflix_selenium.py : Login sur Netflix pour aller voir son activité
 """
 
 
-import sys
-import os
-import time
 from contextlib import contextmanager
+import os
+import sys
+import time
+
+import click
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support.expected_conditions import staleness_of
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.support.expected_conditions import staleness_of
+from selenium.webdriver.support.ui import WebDriverWait
 
+from . import __version__
 
 EMAIL = os.environ.get("NETFLIX_EMAIL")
 PASSWORD = os.environ.get("NETFLIX_PASSWORD")
 
 
-# Utilitaires
 @contextmanager
 def wait_for_page_load(driver, timeout=30):
     """Attente du chargement de la page, utile avant d'effectuer des opérations sur la page"""
@@ -79,8 +81,10 @@ def get_rated(driver):
     pass
 
 
+@click.command()
+@click.version_option(version=__version__)
 def main():
-    """main function"""
+    """Netflix Activity CLI"""
 
     download_dir = os.path.dirname(os.path.abspath(__file__))
     file_name = "NetflixViewingHistory.csv"
@@ -111,7 +115,3 @@ def main():
         print(f"Fichier téléchargé: {download_dir}/{file_name}")
         time.sleep(1)
     driver.quit()
-
-
-if __name__ == "__main__":
-    main()
