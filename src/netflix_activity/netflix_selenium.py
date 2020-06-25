@@ -6,8 +6,10 @@ netflix_selenium.py : Login sur Netflix pour aller voir son activité
 """
 
 
+from collections import defaultdict
 from contextlib import contextmanager
 import os
+from pprint import pprint
 import sys
 import time
 
@@ -72,12 +74,20 @@ def view_activity(driver):
     driver.get("https://www.netflix.com/fr/viewingactivity")
 
 
-def download_seen(driver):
+def download_seen(driver, download_dir):
     """Téléchargement de l'historique d'activité au format csv"""
+
+    file_name = "NetflixViewingHistory.csv"
 
     download_id = "viewing-activity-footer-download"
     with handle_NoSuchElementException(download_id):
         driver.find_element_by_class_name(download_id).click()
+
+    # On attend la fin du téléchargement pour fermer le driver
+    # Si le fichier est déjà présent, il n'a pas le temps d'être téléchargé
+    while not os.path.exists(download_dir + "/" + file_name):
+        print(f"Fichier téléchargé: {download_dir}/{file_name}")
+        time.sleep(1)
 
 
 def get_rated(driver):
@@ -87,7 +97,31 @@ def get_rated(driver):
 
 def get_seen(driver):
     """Récupération des titres vus au format csv titre/date"""
-    pass
+    return get_titles(driver)
+
+
+def get_titles(driver):
+    """Récupération des titres au format csv titre/date"""
+
+    titles_dict = defaultdict(list)
+
+    while True:
+        try:
+            content = driver.find_element_by_css_selector(
+                "button[class='btn btn-blue btn-small']"
+            )
+            content.click()
+        except NoSuchElementException:
+            break
+
+    li_class_name = "retableRow"
+    titles = driver.find_elements_by_class_name(li_class_name)
+    for title in titles:
+        # Le premier tag div contient la date de visionnage
+        titles_dict["dates"].append(title.find_element_by_tag_name("div").text)
+        titles_dict["names"].append(title.find_element_by_tag_name("a").text)
+
+    return titles_dict
 
 
 @click.command()
@@ -104,7 +138,6 @@ def main(headless):
     """Netflix Activity CLI"""
 
     download_dir = os.path.dirname(os.path.abspath(__file__))
-    file_name = "NetflixViewingHistory.csv"
 
     options = Options()
     options.headless = headless
@@ -124,11 +157,8 @@ def main(headless):
 
     login(driver)
     view_activity(driver)
-    download_seen(driver)
+    seen_titles_dict = get_seen(driver)
+    pprint(seen_titles_dict)
+    #  download_seen(driver, download_dir)
 
-    # On attend la fin du téléchargement pour fermer le driver
-    # Si le fichier est déjà présent, il n'a pas le temps d'être téléchargé
-    while not os.path.exists(download_dir + "/" + file_name):
-        print(f"Fichier téléchargé: {download_dir}/{file_name}")
-        time.sleep(1)
     driver.quit()

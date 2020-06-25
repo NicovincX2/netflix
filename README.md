@@ -14,5 +14,11 @@ export NETFLIX_PASSWORD=<my-netflix-password>
 Téléchargement des titres vus au format CSV (date/titre) :
 ```bash
 poetry install
-poetry run netflix-activity
+poetry run netflix-activity --help
 ```
+
+ - [ ] Choisir le profil,
+ - [x] Téléchargement du fichier `.csv` contenant les films vus,
+ - [ ] Récupérer les films vus,
+ - [ ] Récupérer les films notés,
+ - [ ] Afficher les films vus et notés,
