@@ -13,3 +13,8 @@ def runner():
 def test_main_succeeds_in_production_env(runner):
     result = runner.invoke(netflix_selenium.main)
     assert result.exit_code == 0
+
+
+def test_main_succeeds_in_headless_mode(runner):
+    result = runner.invoke(netflix_selenium.main, ["--headless=False"])
+    assert result.exit_code == 0

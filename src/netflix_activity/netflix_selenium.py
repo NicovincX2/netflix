@@ -12,6 +12,7 @@ import sys
 import time
 
 import click
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.firefox.options import Options
@@ -19,6 +20,9 @@ from selenium.webdriver.support.expected_conditions import staleness_of
 from selenium.webdriver.support.ui import WebDriverWait
 
 from . import __version__
+
+
+load_dotenv(verbose=True)
 
 EMAIL = os.environ.get("NETFLIX_EMAIL")
 PASSWORD = os.environ.get("NETFLIX_PASSWORD")
@@ -77,20 +81,33 @@ def download_seen(driver):
 
 
 def get_rated(driver):
-    """Récupération des titres évalués au format csv date/titre"""
+    """Récupération des titres évalués au format csv titre/date"""
+    pass
+
+
+def get_seen(driver):
+    """Récupération des titres vus au format csv titre/date"""
     pass
 
 
 @click.command()
+@click.option(
+    "--headless",
+    "-h",
+    default=True,
+    type=bool,
+    help="Désactive l'affichage du navigateur",
+    show_default=True,
+)
 @click.version_option(version=__version__)
-def main():
+def main(headless):
     """Netflix Activity CLI"""
 
     download_dir = os.path.dirname(os.path.abspath(__file__))
     file_name = "NetflixViewingHistory.csv"
 
     options = Options()
-    options.headless = True
+    options.headless = headless
     # To prevent download dialog
     options.set_preference("browser.download.folderList", 2)  # custom location
     options.set_preference("browser.download.dir", download_dir)

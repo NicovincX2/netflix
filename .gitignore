@@ -2,8 +2,10 @@ src/netflix_activity.egg-info
 src/netflix_activity/__pycache__
 tests/__pycache__
 __pycache__
+poetry.lock
 .coverage
 .nox
 .pytest_cache
+.env
 
 geckodriver.log

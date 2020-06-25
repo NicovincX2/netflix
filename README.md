@@ -2,10 +2,11 @@
 
 ## Installation
 
-Assignation des variables d'environnement :
+Assignation des variables d'environnement avec `python-dotenv`:
 ```bash
-export NETFLIX_EMAIL="<my-netflix-email>"
-export NETFLIX_PASSWORD="<my-netflix-password>"
+# .env
+export NETFLIX_EMAIL=<my-netflix-email>
+export NETFLIX_PASSWORD=<my-netflix-password>
 ```
 
 ## Usage
