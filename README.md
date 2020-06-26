@@ -19,6 +19,6 @@ poetry run netflix-activity --help
 
  - [ ] Choisir le profil,
  - [x] Téléchargement du fichier `.csv` contenant les films vus,
- - [ ] Récupérer les films vus,
- - [ ] Récupérer les films notés,
+ - [x] Récupérer les films vus,
+ - [x] Récupérer les films notés,
  - [ ] Afficher les films vus et notés,

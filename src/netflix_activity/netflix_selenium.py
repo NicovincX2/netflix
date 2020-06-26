@@ -51,6 +51,17 @@ def handle_NoSuchElementException(element):
 class Netflix:
     download_dir = os.path.dirname(os.path.abspath(__file__))
 
+    email_id = "id_userLoginId"
+    password_id = "id_password"
+
+    download_file_name = "NetflixViewingHistory.csv"
+    download_id = "viewing-activity-footer-download"
+
+    page_toggle_class_name = "pageToggle"
+    li_class_name = "retableRow"
+
+    load_next_entries_button_css = "button[class='btn btn-blue btn-small']"
+
     def __init__(self, headless):
         self.driver = self.__get_driver(headless)
 
@@ -62,6 +73,8 @@ class Netflix:
 
     @staticmethod
     def __get_driver(headless):
+        """Renvoie le driver Firefox avec dossier de téléchargement personnalisé"""
+
         options = Options()
         options.headless = headless
         # To prevent download dialog
@@ -81,25 +94,23 @@ class Netflix:
         return driver
 
     def login(self):
-        """Identification de l'utilisateur sur netflix.
+        """Identification de l'utilisateur sur Netflix.
 
         Requires globals EMAIL and PASSWORD
         """
-        email_id = "id_userLoginId"
-        password_id = "id_password"
 
-        with handle_NoSuchElementException(email_id):
-            self.driver.find_element_by_id(email_id).send_keys(EMAIL)
+        with handle_NoSuchElementException(Netflix.email_id):
+            self.driver.find_element_by_id(Netflix.email_id).send_keys(EMAIL)
 
-        with handle_NoSuchElementException(password_id):
-            entry = self.driver.find_element_by_id(password_id)
+        with handle_NoSuchElementException(Netflix.password_id):
+            entry = self.driver.find_element_by_id(Netflix.password_id)
 
         entry.send_keys(PASSWORD)
         entry.submit()  # wait for the next page to load
 
     def view_activity(self):
         """Déplacement sur la page de visualisation de l'activité de l'utilisateur"""
-        # On change de page
+
         with wait_for_page_load(self.driver):
             pass
         self.driver.get("https://www.netflix.com/fr/viewingactivity")
@@ -110,19 +121,18 @@ class Netflix:
         Requires a previous call to view_activity()
         """
 
-        file_name = "NetflixViewingHistory.csv"
-
-        download_id = "viewing-activity-footer-download"
-        with handle_NoSuchElementException(download_id):
-            self.driver.find_element_by_class_name(download_id).click()
+        with handle_NoSuchElementException(Netflix.download_id):
+            self.driver.find_element_by_class_name(Netflix.download_id).click()
 
         # On attend la fin du téléchargement pour fermer le driver
         # Si le fichier est déjà présent, il n'a pas le temps d'être téléchargé
-        while not os.path.exists(Netflix.download_dir + "/" + file_name):
-            print(f"Fichier téléchargé: {Netflix.download_dir}/{file_name}")
+        while not os.path.exists(
+            Netflix.download_dir + "/" + Netflix.download_file_name
+        ):
+            print(
+                f"Fichier téléchargé: {Netflix.download_dir}/{Netflix.download_file_name}"
+            )
             time.sleep(1)
-
-        #  driver.quit()
 
     def get_rated(self):
         """Récupération des titres évalués au format csv titre/date
@@ -131,7 +141,7 @@ class Netflix:
         """
 
         # Vérification qu'on est sur la page des titres évalués
-        if "viewing-activity-footer-download" in self.driver.page_source:
+        if Netflix.download_id in self.driver.page_source:
             self.__page_toggle()
         # On ne change pas d'url donc on ne peut pas utiliser wait_for_page_load()
         time.sleep(1)
@@ -144,7 +154,7 @@ class Netflix:
         """
 
         # Vérification qu'on est sur la page des titres vus
-        if "viewing-activity-footer-download" not in self.driver.page_source:
+        if Netflix.download_id not in self.driver.page_source:
             self.__page_toggle()
         # On ne change pas d'url donc on ne peut pas utiliser wait_for_page_load()
         time.sleep(1)
@@ -153,8 +163,9 @@ class Netflix:
     def __page_toggle(self):
         """Changement de page bidirectionnel entre les titres vus/évalués"""
 
-        page_toggle_class_name = "pageToggle"
-        page_toggle = self.driver.find_element_by_class_name(page_toggle_class_name)
+        page_toggle = self.driver.find_element_by_class_name(
+            Netflix.page_toggle_class_name
+        )
         page_toggle.find_element_by_tag_name("a").click()
 
     def __get_titles(self):
@@ -165,18 +176,17 @@ class Netflix:
         while True:
             try:
                 content = self.driver.find_element_by_css_selector(
-                    "button[class='btn btn-blue btn-small']"
+                    Netflix.load_next_entries_button_css
                 )
                 content.click()
             except NoSuchElementException:
                 break
 
-        li_class_name = "retableRow"
-        titles = self.driver.find_elements_by_class_name(li_class_name)
+        titles = self.driver.find_elements_by_class_name(Netflix.li_class_name)
         for title in titles:
             # Le premier tag div contient la date de visionnage
             titles_dict["dates"].append(title.find_element_by_tag_name("div").text)
-            titles_dict["names"].append(title.find_element_by_tag_name("a").text)
+            titles_dict["titles"].append(title.find_element_by_tag_name("a").text)
 
         return titles_dict
 
