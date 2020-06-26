@@ -75,7 +75,10 @@ def view_activity(driver):
 
 
 def download_seen(driver, download_dir):
-    """Téléchargement de l'historique d'activité au format csv"""
+    """Téléchargement de l'historique d'activité au format csv
+
+    Requires a previous call to view_activity()
+    """
 
     file_name = "NetflixViewingHistory.csv"
 
@@ -89,14 +92,42 @@ def download_seen(driver, download_dir):
         print(f"Fichier téléchargé: {download_dir}/{file_name}")
         time.sleep(1)
 
+    #  driver.quit()
+
+
+def page_toggle(driver):
+    """Changement de page bidirectionnel entre les titres vus/évalués"""
+
+    page_toggle_class_name = "pageToggle"
+    page_toggle = driver.find_element_by_class_name(page_toggle_class_name)
+    page_toggle.find_element_by_tag_name("a").click()
+
 
 def get_rated(driver):
-    """Récupération des titres évalués au format csv titre/date"""
-    pass
+    """Récupération des titres évalués au format csv titre/date
+
+    Requires a previous call to view_activity()
+    """
+
+    # Vérification qu'on est sur la page des titres évalués
+    if "viewing-activity-footer-download" in driver.page_source:
+        page_toggle(driver)
+    # On ne change pas d'url donc on ne peut pas utiliser wait_for_page_load()
+    time.sleep(1)
+    return get_titles(driver)
 
 
 def get_seen(driver):
-    """Récupération des titres vus au format csv titre/date"""
+    """Récupération des titres vus au format csv titre/date
+
+    Requires a previous call to view_activity()
+    """
+
+    # Vérification qu'on est sur la page des titres vus
+    if "viewing-activity-footer-download" not in driver.page_source:
+        page_toggle(driver)
+    # On ne change pas d'url donc on ne peut pas utiliser wait_for_page_load()
+    time.sleep(1)
     return get_titles(driver)
 
 
@@ -157,8 +188,10 @@ def main(headless):
 
     login(driver)
     view_activity(driver)
+    rated_titles_dict = get_rated(driver)
+    pprint(rated_titles_dict)
     seen_titles_dict = get_seen(driver)
     pprint(seen_titles_dict)
-    #  download_seen(driver, download_dir)
+    # download_seen(driver, download_dir)
 
     driver.quit()
