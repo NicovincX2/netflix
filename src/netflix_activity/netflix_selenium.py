@@ -2,7 +2,7 @@
 
 
 """
-netflix_selenium.py : Login sur Netflix pour aller voir son activité
+netflix_selenium.py : Login sur Netflix pour télécharger son activité
 """
 
 
@@ -16,9 +16,14 @@ import time
 import click
 from dotenv import load_dotenv
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.support.expected_conditions import staleness_of
+from selenium.webdriver.support.expected_conditions import (
+    element_to_be_clickable,
+    staleness_of,
+)
 from selenium.webdriver.support.ui import WebDriverWait
 
 from . import __version__
@@ -59,11 +64,15 @@ class Netflix:
 
     page_toggle_class_name = "pageToggle"
     li_class_name = "retableRow"
+    current_profile_class_name = "current-profile"
+    profiles_class_name = "profile-selector"
 
     load_next_entries_button_css = "button[class='btn btn-blue btn-small']"
 
+    viewingactivity_url = "https://www.netflix.com/fr/viewingactivity"
+
     def __init__(self, headless):
-        self.driver = self.__get_driver(headless)
+        self.driver = self.__get_driver_firefox(headless)
 
     def __enter__(self):
         return self
@@ -72,7 +81,7 @@ class Netflix:
         self.driver.quit()
 
     @staticmethod
-    def __get_driver(headless):
+    def __get_driver_firefox(headless):
         """Renvoie le driver Firefox avec dossier de téléchargement personnalisé"""
 
         options = Options()
@@ -89,7 +98,7 @@ class Netflix:
         driver.get(
             "https://www.netflix.com/SwitchProfile?tkn=7J6GIXWIFFA45FGWEV7JRBD7MY"
         )  # nicolas profile token
-        # L'URL https://www.netflix.com/fr/viewingactivity renvoie directement sur l'historique du premier profil créé
+        # L'URL Netflix.viewingactivity_url renvoie sur l'historique du profil par défaut
 
         return driver
 
@@ -106,14 +115,14 @@ class Netflix:
             entry = self.driver.find_element_by_id(Netflix.password_id)
 
         entry.send_keys(PASSWORD)
-        entry.submit()  # wait for the next page to load
+        with wait_for_page_load(self.driver):
+            entry.submit()
 
     def view_activity(self):
         """Déplacement sur la page de visualisation de l'activité de l'utilisateur"""
 
         with wait_for_page_load(self.driver):
-            pass
-        self.driver.get("https://www.netflix.com/fr/viewingactivity")
+            self.driver.get(Netflix.viewingactivity_url)
 
     def download_seen(self):
         """Téléchargement de l'historique d'activité au format csv
@@ -143,8 +152,7 @@ class Netflix:
         # Vérification qu'on est sur la page des titres évalués
         if Netflix.download_id in self.driver.page_source:
             self.__page_toggle()
-        # On ne change pas d'url donc on ne peut pas utiliser wait_for_page_load()
-        time.sleep(1)
+
         return self.__get_titles()
 
     def get_seen(self):
@@ -156,8 +164,7 @@ class Netflix:
         # Vérification qu'on est sur la page des titres vus
         if Netflix.download_id not in self.driver.page_source:
             self.__page_toggle()
-        # On ne change pas d'url donc on ne peut pas utiliser wait_for_page_load()
-        time.sleep(1)
+
         return self.__get_titles()
 
     def __page_toggle(self):
@@ -175,11 +182,12 @@ class Netflix:
 
         while True:
             try:
-                content = self.driver.find_element_by_css_selector(
-                    Netflix.load_next_entries_button_css
-                )
-                content.click()
-            except NoSuchElementException:
+                WebDriverWait(self.driver, 1).until(
+                    element_to_be_clickable(
+                        (By.CSS_SELECTOR, Netflix.load_next_entries_button_css)
+                    )
+                ).click()
+            except TimeoutException:
                 break
 
         titles = self.driver.find_elements_by_class_name(Netflix.li_class_name)
@@ -189,6 +197,21 @@ class Netflix:
             titles_dict["titles"].append(title.find_element_by_tag_name("a").text)
 
         return titles_dict
+
+    def get_current_profile(self):
+        return (
+            self.driver.find_element_by_class_name(Netflix.current_profile_class_name)
+            .find_element_by_tag_name("img")
+            .get_attribute("alt")
+        )
+
+    def set_profile(self, new_profile):
+        profiles = self.driver.find_element_by_class_name(Netflix.profiles_class_name)
+        ActionChains(self.driver).move_to_element(profiles).perform()
+
+        WebDriverWait(self.driver, 5).until(
+            element_to_be_clickable((By.CSS_SELECTOR, f"img[alt='{new_profile}']"))
+        ).click()
 
 
 @click.command()
@@ -207,8 +230,20 @@ def main(headless):
     with Netflix(headless) as netflix:
         netflix.login()
         netflix.view_activity()
+
+        # current_profile = netflix.get_current_profile()
+        # print(current_profile)
+        # netflix.set_profile("dominique.vincent10")
+        # netflix.view_activity()
+        # new_profile = netflix.get_current_profile()
+        # print(new_profile)
+
+        # On peut ne pas noter des films/séries...
         rated_titles_dict = netflix.get_rated()
         pprint(rated_titles_dict)
+        # ...mais considère que l'utilisateur a visionné au moins un(e) film/série
         seen_titles_dict = netflix.get_seen()
+        assert seen_titles_dict
         pprint(seen_titles_dict)
+
         # netflix.download_seen(download_dir)

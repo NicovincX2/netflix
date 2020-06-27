@@ -9,6 +9,8 @@ export NETFLIX_EMAIL=<my-netflix-email>
 export NETFLIX_PASSWORD=<my-netflix-password>
 ```
 
+Firefox doit être installé.
+
 ## Usage
 
 Téléchargement des titres vus au format CSV (date/titre) :
