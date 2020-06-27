@@ -209,14 +209,24 @@ class Netflix:
         return titles_dict
 
     def get_current_profile(self):
-        return (
-            self.driver.find_element_by_class_name(Netflix.current_profile_class_name)
-            .find_element_by_tag_name("img")
-            .get_attribute("alt")
-        )
+        """Récupération du profile actuel"""
+
+        with handle_NoSuchElementException(Netflix.profiles_class_name):
+            return (
+                self.driver.find_element_by_class_name(
+                    Netflix.current_profile_class_name
+                )
+                .find_element_by_tag_name("img")
+                .get_attribute("alt")
+            )
 
     def set_profile(self, new_profile):
-        profiles = self.driver.find_element_by_class_name(Netflix.profiles_class_name)
+        """Changement de profile"""
+
+        with handle_NoSuchElementException(Netflix.profiles_class_name):
+            profiles = self.driver.find_element_by_class_name(
+                Netflix.profiles_class_name
+            )
         ActionChains(self.driver).move_to_element(profiles).perform()
 
         WebDriverWait(self.driver, 5).until(
@@ -224,6 +234,8 @@ class Netflix:
         ).click()
 
     def save_to_json(self, titles_dict, filename):
+        """Sauvegarde de titles_dict dans le fichier .json filename"""
+
         with open(
             Netflix.download_dir + "/" + filename, "w", encoding="utf-8"
         ) as json_file:
@@ -249,17 +261,17 @@ def main(headless):
 
         current_profile = netflix.get_current_profile()
         print(current_profile)
-        netflix.set_profile("dominique.vincent10")
+        netflix.set_profile("vincent")
         netflix.view_activity()
         new_profile = netflix.get_current_profile()
         print(new_profile)
 
-        # On peut ne pas noter des films/séries...
-        rated_titles_dict = netflix.get_rated()
-        netflix.save_to_json(rated_titles_dict, "rated_titles.json")
-        # ...mais considère que l'utilisateur a visionné au moins un(e) film/série
-        seen_titles_dict = netflix.get_seen()
-        assert seen_titles_dict
-        netflix.save_to_json(seen_titles_dict, "seen_titles.json")
+        # # On peut ne pas noter des films/séries...
+        # rated_titles_dict = netflix.get_rated()
+        # netflix.save_to_json(rated_titles_dict, "rated_titles.json")
+        # # ...mais considère que l'utilisateur a visionné au moins un(e) film/série
+        # seen_titles_dict = netflix.get_seen()
+        # assert seen_titles_dict
+        # netflix.save_to_json(seen_titles_dict, "seen_titles.json")
 
         # netflix.download_seen(download_dir)
