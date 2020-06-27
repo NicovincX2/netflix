@@ -99,8 +99,7 @@ class Netflix:
         driver = webdriver.Firefox(options=options)
         driver.get(
             "https://www.netflix.com/SwitchProfile?tkn=7J6GIXWIFFA45FGWEV7JRBD7MY"
-        )  # nicolas profile token
-        # L'URL Netflix.viewingactivity_url renvoie sur l'historique du profil par défaut
+        )  # nicolas token
 
         return driver
 
@@ -198,13 +197,14 @@ class Netflix:
         #     titles_dict["dates"].append(title.find_element_by_tag_name("div").text)
         #     titles_dict["titles"].append(title.find_element_by_tag_name("a").text)
 
-        get_text = lambda div: div.text
-        titles_dict["dates"] = list(
-            map(get_text, self.driver.find_elements_by_css_selector(Netflix.dates_css))
-        )
-        titles_dict["titles"] = list(
-            map(get_text, self.driver.find_elements_by_css_selector(Netflix.titles_css))
-        )
+        titles_dict["dates"] = [
+            div.text
+            for div in self.driver.find_elements_by_css_selector(Netflix.dates_css)
+        ]
+        titles_dict["titles"] = [
+            div.text
+            for div in self.driver.find_elements_by_css_selector(Netflix.titles_css)
+        ]
 
         return titles_dict
 
@@ -247,12 +247,12 @@ def main(headless):
         netflix.login()
         netflix.view_activity()
 
-        # current_profile = netflix.get_current_profile()
-        # print(current_profile)
-        # netflix.set_profile("dominique.vincent10")
-        # netflix.view_activity()
-        # new_profile = netflix.get_current_profile()
-        # print(new_profile)
+        current_profile = netflix.get_current_profile()
+        print(current_profile)
+        netflix.set_profile("dominique.vincent10")
+        netflix.view_activity()
+        new_profile = netflix.get_current_profile()
+        print(new_profile)
 
         # On peut ne pas noter des films/séries...
         rated_titles_dict = netflix.get_rated()
@@ -260,7 +260,6 @@ def main(headless):
         # ...mais considère que l'utilisateur a visionné au moins un(e) film/série
         seen_titles_dict = netflix.get_seen()
         assert seen_titles_dict
-
         netflix.save_to_json(seen_titles_dict, "seen_titles.json")
 
         # netflix.download_seen(download_dir)
