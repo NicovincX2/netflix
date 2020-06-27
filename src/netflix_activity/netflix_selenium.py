@@ -98,8 +98,8 @@ class Netflix:
 
         driver = webdriver.Firefox(options=options)
         driver.get(
-            "https://www.netflix.com/SwitchProfile?tkn=7J6GIXWIFFA45FGWEV7JRBD7MY"
-        )  # nicolas token
+            "https://www.netflix.com/fr/login"
+        )  # nicolas token /SwitchProfile?tkn=7J6GIXWIFFA45FGWEV7JRBD7MY
 
         return driver
 
@@ -227,7 +227,11 @@ class Netflix:
             profiles = self.driver.find_element_by_class_name(
                 Netflix.profiles_class_name
             )
-        ActionChains(self.driver).move_to_element(profiles).perform()
+
+        mouse_hoover = ActionChains(self.driver)
+        mouse_hoover.move_to_element(profiles).perform()
+        # reset the action
+        mouse_hoover.reset_actions()
 
         WebDriverWait(self.driver, 5).until(
             element_to_be_clickable((By.CSS_SELECTOR, f"img[alt='{new_profile}']"))
@@ -265,13 +269,17 @@ def main(headless):
         netflix.view_activity()
         new_profile = netflix.get_current_profile()
         print(new_profile)
+        netflix.set_profile("nicolas")
+        netflix.view_activity()
+        new_profile = netflix.get_current_profile()
+        print(new_profile)
 
-        # # On peut ne pas noter des films/séries...
-        # rated_titles_dict = netflix.get_rated()
-        # netflix.save_to_json(rated_titles_dict, "rated_titles.json")
-        # # ...mais considère que l'utilisateur a visionné au moins un(e) film/série
-        # seen_titles_dict = netflix.get_seen()
-        # assert seen_titles_dict
-        # netflix.save_to_json(seen_titles_dict, "seen_titles.json")
+        # On peut ne pas noter des films/séries...
+        rated_titles_dict = netflix.get_rated()
+        netflix.save_to_json(rated_titles_dict, "rated_titles.json")
+        # ...mais considère que l'utilisateur a visionné au moins un(e) film/série
+        seen_titles_dict = netflix.get_seen()
+        assert seen_titles_dict
+        netflix.save_to_json(seen_titles_dict, "seen_titles.json")
 
         # netflix.download_seen(download_dir)
