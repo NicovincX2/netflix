@@ -8,8 +8,8 @@ netflix_selenium.py : Login sur Netflix pour télécharger son activité
 
 from collections import defaultdict
 from contextlib import contextmanager
+import json
 import os
-from pprint import pprint
 import sys
 import time
 
@@ -68,6 +68,8 @@ class Netflix:
     profiles_class_name = "profile-selector"
 
     load_next_entries_button_css = "button[class='btn btn-blue btn-small']"
+    dates_css = "div[class='col date nowrap']"
+    titles_css = "a[href^='/title/']"
 
     viewingactivity_url = "https://www.netflix.com/fr/viewingactivity"
 
@@ -190,11 +192,19 @@ class Netflix:
             except TimeoutException:
                 break
 
-        titles = self.driver.find_elements_by_class_name(Netflix.li_class_name)
-        for title in titles:
-            # Le premier tag div contient la date de visionnage
-            titles_dict["dates"].append(title.find_element_by_tag_name("div").text)
-            titles_dict["titles"].append(title.find_element_by_tag_name("a").text)
+        # titles = self.driver.find_elements_by_class_name(Netflix.li_class_name)
+        # for title in titles:
+        #     # Le premier tag div contient la date de visionnage
+        #     titles_dict["dates"].append(title.find_element_by_tag_name("div").text)
+        #     titles_dict["titles"].append(title.find_element_by_tag_name("a").text)
+
+        get_text = lambda div: div.text
+        titles_dict["dates"] = list(
+            map(get_text, self.driver.find_elements_by_css_selector(Netflix.dates_css))
+        )
+        titles_dict["titles"] = list(
+            map(get_text, self.driver.find_elements_by_css_selector(Netflix.titles_css))
+        )
 
         return titles_dict
 
@@ -212,6 +222,12 @@ class Netflix:
         WebDriverWait(self.driver, 5).until(
             element_to_be_clickable((By.CSS_SELECTOR, f"img[alt='{new_profile}']"))
         ).click()
+
+    def save_to_json(self, titles_dict, filename):
+        with open(
+            Netflix.download_dir + "/" + filename, "w", encoding="utf-8"
+        ) as json_file:
+            json.dump(titles_dict, json_file, ensure_ascii=False, indent=4)
 
 
 @click.command()
@@ -240,10 +256,11 @@ def main(headless):
 
         # On peut ne pas noter des films/séries...
         rated_titles_dict = netflix.get_rated()
-        pprint(rated_titles_dict)
+        netflix.save_to_json(rated_titles_dict, "rated_titles.json")
         # ...mais considère que l'utilisateur a visionné au moins un(e) film/série
         seen_titles_dict = netflix.get_seen()
         assert seen_titles_dict
-        pprint(seen_titles_dict)
+
+        netflix.save_to_json(seen_titles_dict, "seen_titles.json")
 
         # netflix.download_seen(download_dir)
