@@ -19,8 +19,7 @@ poetry install
 poetry run netflix-activity --help
 ```
 
- - [ ] Choisir le profil,
+ - [x] Choisir le profil,
  - [x] Téléchargement du fichier `.csv` contenant les films vus,
- - [x] Récupérer les films vus,
- - [x] Récupérer les films notés,
- - [ ] Afficher les films vus et notés,
+ - [x] Récupérer les films vus dans un fichier `.json`,
+ - [x] Récupérer les films notés dans un fichier `.json`,
