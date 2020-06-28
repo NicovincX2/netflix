@@ -56,6 +56,7 @@ def handle_NoSuchElementException(element):
 class Netflix:
     download_dir = os.path.dirname(os.path.abspath(__file__))
 
+    #  La suite des variables est propre à Netflix, à changer au besoin
     email_id = "id_userLoginId"
     password_id = "id_password"
 
@@ -63,7 +64,7 @@ class Netflix:
     download_id = "viewing-activity-footer-download"
 
     page_toggle_class_name = "pageToggle"
-    li_class_name = "retableRow"
+    #  li_class_name = "retableRow"
     current_profile_class_name = "current-profile"
     profiles_class_name = "profile-selector"
 
@@ -75,6 +76,9 @@ class Netflix:
 
     def __init__(self, headless):
         self.driver = self.__get_driver_firefox(headless)
+
+        self.__login()
+        self.view_activity()
 
     def __enter__(self):
         return self
@@ -97,17 +101,17 @@ class Netflix:
         )
 
         driver = webdriver.Firefox(options=options)
-        driver.get(
-            "https://www.netflix.com/fr/login"
-        )  # nicolas token /SwitchProfile?tkn=7J6GIXWIFFA45FGWEV7JRBD7MY
 
         return driver
 
-    def login(self):
+    def __login(self):
         """Identification de l'utilisateur sur Netflix.
 
         Requires globals EMAIL and PASSWORD
         """
+        self.driver.get(
+            "https://www.netflix.com/fr/login"
+        )  # some user token "/SwitchProfile?tkn=<profile_token>"
 
         with handle_NoSuchElementException(Netflix.email_id):
             self.driver.find_element_by_id(Netflix.email_id).send_keys(EMAIL)
@@ -209,7 +213,7 @@ class Netflix:
         return titles_dict
 
     def get_current_profile(self):
-        """Récupération du profile actuel"""
+        """Récupération du profil actuel"""
 
         with handle_NoSuchElementException(Netflix.profiles_class_name):
             return (
@@ -221,7 +225,7 @@ class Netflix:
             )
 
     def set_profile(self, new_profile):
-        """Changement de profile"""
+        """Changement de profil"""
 
         with handle_NoSuchElementException(Netflix.profiles_class_name):
             profiles = self.driver.find_element_by_class_name(
@@ -260,9 +264,6 @@ def main(headless):
     """Netflix Activity CLI"""
 
     with Netflix(headless) as netflix:
-        netflix.login()
-        netflix.view_activity()
-
         current_profile = netflix.get_current_profile()
         print(current_profile)
         # netflix.set_profile("vincent")
@@ -277,9 +278,9 @@ def main(headless):
         # On peut ne pas noter des films/séries...
         rated_titles_dict = netflix.get_rated()
         netflix.save_to_json(rated_titles_dict, "rated_titles.json")
-        # ...mais considère que l'utilisateur a visionné au moins un(e) film/série
+        # ...mais on considère que l'utilisateur a visionné au moins un(e) film/série
         seen_titles_dict = netflix.get_seen()
         assert seen_titles_dict
         netflix.save_to_json(seen_titles_dict, "seen_titles.json")
 
-        # netflix.download_seen(download_dir)
+        # netflix.download_seen()
