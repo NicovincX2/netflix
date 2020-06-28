@@ -79,6 +79,8 @@ class Netflix:
         self.__driver = self.__get_driver_firefox(headless)
 
         # Chargement des informations de login
+        #  Penser à supprimer le fichier cookies.pkl lorsque vous changez les identifiants
+        #  dans le .env.
         if os.path.exists(Netflix.download_dir + "/cookies.pkl"):
             cookies = pickle.load(open(Netflix.download_dir + "/cookies.pkl", "rb"))
             for cookie in cookies:
