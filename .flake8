@@ -1,7 +1,7 @@
 [flake8]
 select = B,B9,BLK,C,E,F,I,S,W
 max-complexity = 10
-ignore = E501,E203,W503,B950,S101,E731
+ignore = E501,E203,W503,B950,S101,E731,S403,S301
 max-line-length = 80
 application-import-names = netflix_activity,tests
 import-order-style = google

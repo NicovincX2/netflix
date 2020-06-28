@@ -10,7 +10,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 import json
 import os
-import sys
+import pickle
 import time
 
 import click
@@ -50,7 +50,7 @@ def handle_NoSuchElementException(element):
         yield
     except NoSuchElementException as err:
         print(f"L'élément {element} n'a pas été trouvé:", err)
-        sys.exit(1)
+        raise NoSuchElementException
 
 
 class Netflix:
@@ -73,18 +73,33 @@ class Netflix:
     titles_css = "a[href^='/title/']"
 
     viewingactivity_url = "https://www.netflix.com/fr/viewingactivity"
+    login_url = "https://www.netflix.com/fr/login"
 
     def __init__(self, headless):
-        self.driver = self.__get_driver_firefox(headless)
+        self.__driver = self.__get_driver_firefox(headless)
 
-        self.__login()
+        # Chargement des informations de login
+        if os.path.exists(Netflix.download_dir + "/cookies.pkl"):
+            cookies = pickle.load(open(Netflix.download_dir + "/cookies.pkl", "rb"))
+            for cookie in cookies:
+                self.__driver.add_cookie(cookie)
+        else:
+            self.__login()
+
+            pickle.dump(
+                self.__driver.get_cookies(),
+                open(Netflix.download_dir + "/cookies.pkl", "wb"),
+            )
+
         self.view_activity()
+        # Initialisation du profil sur celui par défaut
+        self.current_profile = self.__get_current_profile()
 
     def __enter__(self):
         return self
 
     def __exit__(self, type, value, traceback):
-        self.driver.quit()
+        self.__driver.quit()
 
     @staticmethod
     def __get_driver_firefox(headless):
@@ -101,6 +116,8 @@ class Netflix:
         )
 
         driver = webdriver.Firefox(options=options)
+        #  On se place sur le site de netflix pour charger les cookies
+        driver.get("https://www.netflix.com")
 
         return driver
 
@@ -109,25 +126,25 @@ class Netflix:
 
         Requires globals EMAIL and PASSWORD
         """
-        self.driver.get(
-            "https://www.netflix.com/fr/login"
+        self.__driver.get(
+            Netflix.login_url
         )  # some user token "/SwitchProfile?tkn=<profile_token>"
 
         with handle_NoSuchElementException(Netflix.email_id):
-            self.driver.find_element_by_id(Netflix.email_id).send_keys(EMAIL)
+            self.__driver.find_element_by_id(Netflix.email_id).send_keys(EMAIL)
 
         with handle_NoSuchElementException(Netflix.password_id):
-            entry = self.driver.find_element_by_id(Netflix.password_id)
+            entry = self.__driver.find_element_by_id(Netflix.password_id)
 
         entry.send_keys(PASSWORD)
-        with wait_for_page_load(self.driver):
+        with wait_for_page_load(self.__driver):
             entry.submit()
 
     def view_activity(self):
         """Déplacement sur la page de visualisation de l'activité de l'utilisateur"""
 
-        with wait_for_page_load(self.driver):
-            self.driver.get(Netflix.viewingactivity_url)
+        with wait_for_page_load(self.__driver):
+            self.__driver.get(Netflix.viewingactivity_url)
 
     def download_seen(self):
         """Téléchargement de l'historique d'activité au format csv
@@ -136,7 +153,7 @@ class Netflix:
         """
 
         with handle_NoSuchElementException(Netflix.download_id):
-            self.driver.find_element_by_class_name(Netflix.download_id).click()
+            self.__driver.find_element_by_class_name(Netflix.download_id).click()
 
         # On attend la fin du téléchargement pour fermer le driver
         # Si le fichier est déjà présent, il n'a pas le temps d'être téléchargé
@@ -155,7 +172,7 @@ class Netflix:
         """
 
         # Vérification qu'on est sur la page des titres évalués
-        if Netflix.download_id in self.driver.page_source:
+        if Netflix.download_id in self.__driver.page_source:
             self.__page_toggle()
 
         return self.__get_titles()
@@ -167,7 +184,7 @@ class Netflix:
         """
 
         # Vérification qu'on est sur la page des titres vus
-        if Netflix.download_id not in self.driver.page_source:
+        if Netflix.download_id not in self.__driver.page_source:
             self.__page_toggle()
 
         return self.__get_titles()
@@ -175,7 +192,7 @@ class Netflix:
     def __page_toggle(self):
         """Changement de page bidirectionnel entre les titres vus/évalués"""
 
-        page_toggle = self.driver.find_element_by_class_name(
+        page_toggle = self.__driver.find_element_by_class_name(
             Netflix.page_toggle_class_name
         )
         page_toggle.find_element_by_tag_name("a").click()
@@ -187,7 +204,7 @@ class Netflix:
 
         while True:
             try:
-                WebDriverWait(self.driver, 1).until(
+                WebDriverWait(self.__driver, 1).until(
                     element_to_be_clickable(
                         (By.CSS_SELECTOR, Netflix.load_next_entries_button_css)
                     )
@@ -195,7 +212,7 @@ class Netflix:
             except TimeoutException:
                 break
 
-        # titles = self.driver.find_elements_by_class_name(Netflix.li_class_name)
+        # titles = self.__driver.find_elements_by_class_name(Netflix.li_class_name)
         # for title in titles:
         #     # Le premier tag div contient la date de visionnage
         #     titles_dict["dates"].append(title.find_element_by_tag_name("div").text)
@@ -203,43 +220,50 @@ class Netflix:
 
         titles_dict["dates"] = [
             div.text
-            for div in self.driver.find_elements_by_css_selector(Netflix.dates_css)
+            for div in self.__driver.find_elements_by_css_selector(Netflix.dates_css)
         ]
         titles_dict["titles"] = [
             div.text
-            for div in self.driver.find_elements_by_css_selector(Netflix.titles_css)
+            for div in self.__driver.find_elements_by_css_selector(Netflix.titles_css)
         ]
 
         return titles_dict
 
-    def get_current_profile(self):
+    def __get_current_profile(self):
         """Récupération du profil actuel"""
 
         with handle_NoSuchElementException(Netflix.profiles_class_name):
             return (
-                self.driver.find_element_by_class_name(
+                self.__driver.find_element_by_class_name(
                     Netflix.current_profile_class_name
                 )
                 .find_element_by_tag_name("img")
                 .get_attribute("alt")
             )
 
+    def get_current_profile(self):
+        return self.current_profile
+
     def set_profile(self, new_profile):
         """Changement de profil"""
 
         with handle_NoSuchElementException(Netflix.profiles_class_name):
-            profiles = self.driver.find_element_by_class_name(
+            profiles = self.__driver.find_element_by_class_name(
                 Netflix.profiles_class_name
             )
 
-        mouse_hoover = ActionChains(self.driver)
+        mouse_hoover = ActionChains(self.__driver)
         mouse_hoover.move_to_element(profiles).perform()
         # reset the action
         mouse_hoover.reset_actions()
 
-        WebDriverWait(self.driver, 5).until(
-            element_to_be_clickable((By.CSS_SELECTOR, f"img[alt='{new_profile}']"))
-        ).click()
+        new_profile_css = f"img[alt='{new_profile}']"
+        with handle_NoSuchElementException(new_profile_css):
+            WebDriverWait(self.__driver, 5).until(
+                element_to_be_clickable((By.CSS_SELECTOR, new_profile_css))
+            ).click()
+
+        self.current_profile = new_profile
 
     def save_to_json(self, titles_dict, filename):
         """Sauvegarde de titles_dict dans le fichier .json filename"""

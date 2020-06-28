@@ -1,5 +1,6 @@
 src/netflix_activity.egg-info
 src/netflix_activity/__pycache__
+src/netflix_activity/netflix_activity/cookies.pkl
 tests/__pycache__
 __pycache__
 poetry.lock

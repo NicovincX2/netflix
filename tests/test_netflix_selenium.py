@@ -2,6 +2,7 @@ import os
 
 import click.testing
 import pytest
+from selenium.common.exceptions import TimeoutException
 
 from netflix_activity import netflix_selenium
 
@@ -15,10 +16,10 @@ def runner():
     return click.testing.CliRunner()
 
 
-@pytest.yield_fixture
-def netflix_headless(tmp_path):
+@pytest.yield_fixture(scope="module")
+def netflix_headless(tmp_path_factory):
     headless = True
-    netflix_selenium.Netflix.download_dir = str(tmp_path)
+    netflix_selenium.Netflix.download_dir = str(tmp_path_factory.getbasetemp())
     with netflix_selenium.Netflix(headless) as netflix:
         yield netflix
 
@@ -61,6 +62,15 @@ def test_switch_profiles(netflix_headless):
     assert new_profile == PROFILES[0]
 
 
+@pytest.mark.xfail(raises=TimeoutException)
+def test_non_existent_profile(netflix_headless):
+    netflix_headless.view_activity()
+    current_profile = netflix_headless.get_current_profile()
+    assert current_profile == PROFILES[0]
+
+    netflix_headless.set_profile("unknown_profile")
+
+
 def test_download_seen(netflix_headless):
     """Téléchargement des titres vus"""
 
@@ -75,6 +85,7 @@ def test_download_seen(netflix_headless):
 def test_get_json(netflix_headless):
     """Téléchargement des titres vus/notés au format json"""
 
+    netflix_headless.view_activity()
     # On peut ne pas noter des films/séries...
     rated_titles_dict = netflix_headless.get_rated()
     netflix_headless.save_to_json(rated_titles_dict, "rated_titles.json")
