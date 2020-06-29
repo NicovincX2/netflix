@@ -105,7 +105,11 @@ class Netflix:
 
     @staticmethod
     def __get_driver_firefox(headless):
-        """Renvoie le driver Firefox avec dossier de téléchargement personnalisé"""
+        """Renvoie le driver Firefox avec dossier de téléchargement personnalisé
+
+        Uses class attributes
+            download_dir
+        """
 
         options = Options()
         options.headless = headless
@@ -126,6 +130,11 @@ class Netflix:
     def __login(self):
         """Identification de l'utilisateur sur Netflix.
 
+        Uses class attributes
+            login_url
+            email_id
+            password_id
+
         Requires globals EMAIL and PASSWORD
         """
         self.__driver.get(
@@ -143,13 +152,22 @@ class Netflix:
             entry.submit()
 
     def view_activity(self):
-        """Déplacement sur la page de visualisation de l'activité de l'utilisateur"""
+        """Déplacement sur la page de visualisation de l'activité de l'utilisateur
+
+        Uses class attributes
+            viewingactivity_url
+        """
 
         with wait_for_page_load(self.__driver):
             self.__driver.get(Netflix.viewingactivity_url)
 
     def download_seen(self):
-        """Téléchargement de l'historique d'activité au format csv
+        """Téléchargement du fichier CSV fournit par Netflix
+
+        Uses class attributes
+            download_file_name
+            download_id
+            download_dir
 
         Requires a previous call to view_activity()
         """
@@ -168,7 +186,10 @@ class Netflix:
             time.sleep(1)
 
     def get_rated(self):
-        """Récupération des titres évalués au format csv titre/date
+        """Récupération des titres évalués
+
+        Uses class attributes
+            download_id
 
         Requires a previous call to view_activity()
         """
@@ -180,7 +201,10 @@ class Netflix:
         return self.__get_titles()
 
     def get_seen(self):
-        """Récupération des titres vus au format csv titre/date
+        """Récupération des titres vus
+
+        Uses class attributes
+            download_id
 
         Requires a previous call to view_activity()
         """
@@ -192,7 +216,11 @@ class Netflix:
         return self.__get_titles()
 
     def __page_toggle(self):
-        """Changement de page bidirectionnel entre les titres vus/évalués"""
+        """Changement de page bidirectionnel entre les titres vus/évalués
+
+        Uses class attributes
+            page_toggle_class_name
+        """
 
         page_toggle = self.__driver.find_element_by_class_name(
             Netflix.page_toggle_class_name
@@ -200,7 +228,13 @@ class Netflix:
         page_toggle.find_element_by_tag_name("a").click()
 
     def __get_titles(self):
-        """Récupération des titres au format csv titre/date"""
+        """Récupération des titres au format csv titre/date
+
+        Uses class attributes
+            load_next_entries_button_css
+            dates_css
+            titles_css
+        """
 
         titles_dict = defaultdict(list)
 
@@ -232,7 +266,12 @@ class Netflix:
         return titles_dict
 
     def __get_current_profile(self):
-        """Récupération du profil actuel"""
+        """Récupération du profil actuel
+
+        Uses class attributes
+            profiles_class_name
+            current_profile_class_name
+        """
 
         with handle_NoSuchElementException(Netflix.profiles_class_name):
             return (
@@ -247,7 +286,11 @@ class Netflix:
         return self.current_profile
 
     def set_profile(self, new_profile):
-        """Changement de profil"""
+        """Changement de profil
+
+        Uses class attributes
+            profiles_class_name
+        """
 
         with handle_NoSuchElementException(Netflix.profiles_class_name):
             profiles = self.__driver.find_element_by_class_name(
@@ -268,7 +311,11 @@ class Netflix:
         self.current_profile = new_profile
 
     def save_to_json(self, titles_dict, filename):
-        """Sauvegarde de titles_dict dans le fichier .json filename"""
+        """Sauvegarde de titles_dict dans le fichier .json filename
+
+        Uses class attributes
+            download_dir
+        """
 
         with open(
             Netflix.download_dir + "/" + filename, "w", encoding="utf-8"
