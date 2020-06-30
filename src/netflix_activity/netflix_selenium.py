@@ -303,10 +303,13 @@ class Netflix:
         mouse_hoover.reset_actions()
 
         new_profile_css = f"img[alt='{new_profile}']"
-        with handle_NoSuchElementException(new_profile_css):
+        try:
             WebDriverWait(self.__driver, 5).until(
                 element_to_be_clickable((By.CSS_SELECTOR, new_profile_css))
             ).click()
+        except TimeoutException:
+            print("The new profile can't be found")
+            raise TimeoutException
 
         self.current_profile = new_profile
 
