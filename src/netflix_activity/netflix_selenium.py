@@ -64,13 +64,13 @@ class Netflix:
     download_id = "viewing-activity-footer-download"
 
     page_toggle_class_name = "pageToggle"
-    #  li_class_name = "retableRow"
+    li_class_name = "retableRow"
     current_profile_class_name = "current-profile"
     profiles_class_name = "profile-selector"
 
     load_next_entries_button_css = "button[class='btn btn-blue btn-small']"
-    dates_css = "div[class='col date nowrap']"
-    titles_css = "a[href^='/title/']"
+    # dates_css = "div[class='col date nowrap']"
+    # titles_css = "a[href^='/title/']"
 
     viewingactivity_url = "https://www.netflix.com/fr/viewingactivity"
     login_url = "https://www.netflix.com/fr/login"
@@ -236,7 +236,7 @@ class Netflix:
             titles_css
         """
 
-        titles_dict = defaultdict(list)
+        titles_dict = defaultdict(str)
 
         while True:
             try:
@@ -248,20 +248,21 @@ class Netflix:
             except TimeoutException:
                 break
 
-        # titles = self.__driver.find_elements_by_class_name(Netflix.li_class_name)
-        # for title in titles:
-        #     # Le premier tag div contient la date de visionnage
-        #     titles_dict["dates"].append(title.find_element_by_tag_name("div").text)
-        #     titles_dict["titles"].append(title.find_element_by_tag_name("a").text)
+        titles = self.__driver.find_elements_by_class_name(Netflix.li_class_name)
+        for title in titles:
+            # Le premier tag div contient la date de visionnage
+            titles_dict[
+                title.find_element_by_tag_name("div").text
+            ] = title.find_element_by_tag_name("a").text
 
-        titles_dict["dates"] = [
-            div.text
-            for div in self.__driver.find_elements_by_css_selector(Netflix.dates_css)
-        ]
-        titles_dict["titles"] = [
-            div.text
-            for div in self.__driver.find_elements_by_css_selector(Netflix.titles_css)
-        ]
+        # titles_dict["dates"] = [
+        #     div.text
+        #     for div in self.__driver.find_elements_by_css_selector(Netflix.dates_css)
+        # ]
+        # titles_dict["titles"] = [
+        #     div.text
+        #     for div in self.__driver.find_elements_by_css_selector(Netflix.titles_css)
+        # ]
 
         return titles_dict
 

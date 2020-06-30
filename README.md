@@ -5,8 +5,9 @@ Le format JSON des titres vus ou notés est le suivant:
 
 ```bash
 {
-    "dates": ["19/06/2020", "04/06/2020"],
-    "titles": ["La Momie", "Green Lantern"]
+    "28/06/2020": "Assassin's Creed",
+    "19/06/2020": "La Momie",
+    "04/06/2020": "Green Lantern",
 }
 ```
 
