@@ -11,7 +11,7 @@ Le format JSON des titres vus ou notés est le suivant:
 }
 ```
 
-Après la première exécution de la fonction `main` du fichier `src/netflix_activity/netflix_selenium.py`, trois fichiers seront créés:
+Après la première exécution de la fonction `main` du fichier `example/main.py`, trois fichiers seront créés:
 
 ```
 src/
@@ -52,8 +52,13 @@ poetry install
 poetry run netflix-activity --help
 ```
 
-La commande `poetry run netflix-activity` lance la fonction `main` sans affichage du navigateur.
+La commande `poetry run netflix-activity` lance la fonction `main` du fichier `example/main.py` sans affichage du navigateur.
 N'hésitez pas à modifier cette fonction pour choisir le profil de l'utilisateur.
+
+La commande suivante permet de lancer les tests :
+```bash
+nox -rs tests-3.8
+```
 
  - [x] Choisir le profil,
  - [x] Téléchargement du fichier `.csv` contenant les films vus,

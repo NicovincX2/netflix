@@ -13,8 +13,6 @@ import os
 import pickle
 import time
 
-import click
-from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
@@ -25,14 +23,6 @@ from selenium.webdriver.support.expected_conditions import (
     staleness_of,
 )
 from selenium.webdriver.support.ui import WebDriverWait
-
-from . import __version__
-
-
-load_dotenv(verbose=True)
-
-EMAIL = os.environ.get("NETFLIX_EMAIL")
-PASSWORD = os.environ.get("NETFLIX_PASSWORD")
 
 
 @contextmanager
@@ -75,7 +65,7 @@ class Netflix:
     viewingactivity_url = "https://www.netflix.com/fr/viewingactivity"
     login_url = "https://www.netflix.com/fr/login"
 
-    def __init__(self, headless):
+    def __init__(self, headless, email, password):
         self.__driver = self.__get_driver_firefox(headless)
 
         # Chargement des informations de login
@@ -86,7 +76,7 @@ class Netflix:
             for cookie in cookies:
                 self.__driver.add_cookie(cookie)
         else:
-            self.__login()
+            self.__login(email, password)
 
             pickle.dump(
                 self.__driver.get_cookies(),
@@ -127,7 +117,7 @@ class Netflix:
 
         return driver
 
-    def __login(self):
+    def __login(self, email, password):
         """Identification de l'utilisateur sur Netflix.
 
         Uses class attributes
@@ -135,19 +125,19 @@ class Netflix:
             email_id
             password_id
 
-        Requires globals EMAIL and PASSWORD
+        Requires parameters email and password
         """
         self.__driver.get(
             Netflix.login_url
         )  # some user token "/SwitchProfile?tkn=<profile_token>"
 
         with handle_NoSuchElementException(Netflix.email_id):
-            self.__driver.find_element_by_id(Netflix.email_id).send_keys(EMAIL)
+            self.__driver.find_element_by_id(Netflix.email_id).send_keys(email)
 
         with handle_NoSuchElementException(Netflix.password_id):
             entry = self.__driver.find_element_by_id(Netflix.password_id)
 
-        entry.send_keys(PASSWORD)
+        entry.send_keys(password)
         with wait_for_page_load(self.__driver):
             entry.submit()
 
@@ -325,39 +315,3 @@ class Netflix:
             Netflix.download_dir + "/" + filename, "w", encoding="utf-8"
         ) as json_file:
             json.dump(titles_dict, json_file, ensure_ascii=False, indent=4)
-
-
-@click.command()
-@click.option(
-    "--headless",
-    "-h",
-    default=True,
-    type=bool,
-    help="Désactive l'affichage du navigateur",
-    show_default=True,
-)
-@click.version_option(version=__version__)
-def main(headless):
-    """Netflix Activity CLI"""
-
-    with Netflix(headless) as netflix:
-        current_profile = netflix.get_current_profile()
-        print(current_profile)
-        # netflix.set_profile("vincent")
-        # netflix.view_activity()
-        # new_profile = netflix.get_current_profile()
-        # print(new_profile)
-        netflix.set_profile("nicolas")
-        netflix.view_activity()
-        new_profile = netflix.get_current_profile()
-        print(new_profile)
-
-        # On peut ne pas noter des films/séries...
-        rated_titles_dict = netflix.get_rated()
-        netflix.save_to_json(rated_titles_dict, "rated_titles.json")
-        # ...mais on considère que l'utilisateur a visionné au moins un(e) film/série
-        seen_titles_dict = netflix.get_seen()
-        assert seen_titles_dict
-        netflix.save_to_json(seen_titles_dict, "seen_titles.json")
-
-        # netflix.download_seen()
