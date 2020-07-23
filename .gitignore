@@ -8,5 +8,6 @@ poetry.lock
 .nox
 .pytest_cache
 .env
+.github
 
 geckodriver.log
