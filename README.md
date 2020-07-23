@@ -55,12 +55,15 @@ poetry run netflix-activity --help
 La commande `poetry run netflix-activity` lance la fonction `main` du fichier `example/main.py` sans affichage du navigateur.
 N'hésitez pas à modifier cette fonction pour choisir le profil de l'utilisateur.
 
+## Tests
+
 La commande suivante permet de lancer les tests :
 ```bash
 nox -rs tests-3.8
 ```
 
- - [x] Choisir le profil,
+ - [x] Choix du profil,
  - [x] Téléchargement du fichier `.csv` contenant les films vus,
  - [x] Récupérer les films vus dans un fichier `.json`,
  - [x] Récupérer les films notés dans un fichier `.json`,
+ - [x] Sauvegarde de la session,
