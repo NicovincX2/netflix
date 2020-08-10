@@ -14,7 +14,10 @@ import pickle
 import time
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    TimeoutException,
+)
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
@@ -51,12 +54,13 @@ class Netflix:
     password_id = "id_password"
 
     download_file_name = "NetflixViewingHistory.csv"
-    download_id = "viewing-activity-footer-download"
+    download_class_name = "viewing-activity-footer-download"
 
     page_toggle_class_name = "pageToggle"
     li_class_name = "retableRow"
     current_profile_class_name = "current-profile"
     profiles_class_name = "profile-selector"
+    popup_close_class_name = "nfdclose"
 
     load_next_entries_button_css = "button[class='btn btn-blue btn-small']"
     # dates_css = "div[class='col date nowrap']"
@@ -71,16 +75,16 @@ class Netflix:
         # Chargement des informations de login
         #  Penser à supprimer le fichier cookies.pkl lorsque vous changez les identifiants
         #  dans le .env.
-        if os.path.exists(Netflix.download_dir + "/cookies.pkl"):
-            cookies = pickle.load(open(Netflix.download_dir + "/cookies.pkl", "rb"))
+        cookies_file_path = Netflix.download_dir + "/cookies.pkl"
+        if os.path.exists(cookies_file_path):
+            cookies = pickle.load(open(cookies_file_path, "rb"))
             for cookie in cookies:
                 self.__driver.add_cookie(cookie)
         else:
             self.__login(email, password)
 
             pickle.dump(
-                self.__driver.get_cookies(),
-                open(Netflix.download_dir + "/cookies.pkl", "wb"),
+                self.__driver.get_cookies(), open(cookies_file_path, "wb"),
             )
 
         self.view_activity()
@@ -156,36 +160,44 @@ class Netflix:
 
         Uses class attributes
             download_file_name
-            download_id
+            download_class_name
             download_dir
-
-        Requires a previous call to view_activity()
         """
 
-        with handle_NoSuchElementException(Netflix.download_id):
-            self.__driver.find_element_by_class_name(Netflix.download_id).click()
+        if Netflix.download_class_name not in self.__driver.page_source:
+            self.view_activity()
+
+        with handle_NoSuchElementException(Netflix.download_class_name):
+            self.__driver.find_element_by_class_name(
+                Netflix.download_class_name
+            ).click()
+
+        #  Popup windows open
+        with handle_NoSuchElementException(Netflix.popup_close_class_name):
+            self.__driver.find_element_by_class_name(
+                Netflix.popup_close_class_name
+            ).click()
 
         # On attend la fin du téléchargement pour fermer le driver
         # Si le fichier est déjà présent, il n'a pas le temps d'être téléchargé
-        while not os.path.exists(
-            Netflix.download_dir + "/" + Netflix.download_file_name
-        ):
-            print(
-                f"Fichier téléchargé: {Netflix.download_dir}/{Netflix.download_file_name}"
-            )
+        download_file_path = os.path.join(
+            Netflix.download_dir, Netflix.download_file_name
+        )
+        while not os.path.exists(download_file_path):
+            print(f"Fichier téléchargé: {download_file_path}")
             time.sleep(1)
 
     def get_rated(self):
         """Récupération des titres évalués
 
         Uses class attributes
-            download_id
+            download_class_name
 
         Requires a previous call to view_activity()
         """
 
         # Vérification qu'on est sur la page des titres évalués
-        if Netflix.download_id in self.__driver.page_source:
+        if Netflix.download_class_name in self.__driver.page_source:
             self.__page_toggle()
 
         return self.__get_titles()
@@ -194,13 +206,13 @@ class Netflix:
         """Récupération des titres vus
 
         Uses class attributes
-            download_id
+            download_class_name
 
         Requires a previous call to view_activity()
         """
 
         # Vérification qu'on est sur la page des titres vus
-        if Netflix.download_id not in self.__driver.page_source:
+        if Netflix.download_class_name not in self.__driver.page_source:
             self.__page_toggle()
 
         return self.__get_titles()
@@ -212,9 +224,10 @@ class Netflix:
             page_toggle_class_name
         """
 
-        page_toggle = self.__driver.find_element_by_class_name(
-            Netflix.page_toggle_class_name
-        )
+        with handle_NoSuchElementException(Netflix.page_toggle_class_name):
+            page_toggle = self.__driver.find_element_by_class_name(
+                Netflix.page_toggle_class_name
+            )
         page_toggle.find_element_by_tag_name("a").click()
 
     def __get_titles(self):
@@ -226,8 +239,6 @@ class Netflix:
             titles_css
         """
 
-        titles_dict = defaultdict(str)
-
         while True:
             try:
                 WebDriverWait(self.__driver, 1).until(
@@ -238,6 +249,7 @@ class Netflix:
             except TimeoutException:
                 break
 
+        titles_dict = defaultdict(str)
         titles = self.__driver.find_elements_by_class_name(Netflix.li_class_name)
         for title in titles:
             # Le premier tag div contient la date de visionnage
@@ -312,6 +324,6 @@ class Netflix:
         """
 
         with open(
-            Netflix.download_dir + "/" + filename, "w", encoding="utf-8"
+            os.path.join(Netflix.download_dir, filename), "w", encoding="utf-8"
         ) as json_file:
             json.dump(titles_dict, json_file, ensure_ascii=False, indent=4)

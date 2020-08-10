@@ -29,6 +29,7 @@ def main(headless):
     with Netflix(headless, EMAIL, PASSWORD) as netflix:
         current_profile = netflix.get_current_profile()
         print(current_profile)
+
         # netflix.set_profile("vincent")
         # netflix.view_activity()
         # new_profile = netflix.get_current_profile()
@@ -41,9 +42,10 @@ def main(headless):
         # On peut ne pas noter des films/séries...
         rated_titles_dict = netflix.get_rated()
         netflix.save_to_json(rated_titles_dict, "rated_titles.json")
+
+        netflix.download_seen()
+
         # ...mais on considère que l'utilisateur a visionné au moins un(e) film/série
         seen_titles_dict = netflix.get_seen()
         assert seen_titles_dict
         netflix.save_to_json(seen_titles_dict, "seen_titles.json")
-
-        # netflix.download_seen()
