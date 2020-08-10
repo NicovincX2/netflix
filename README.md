@@ -69,3 +69,4 @@ nox -rs tests-3.8
  - [x] Récupérer les films vus dans un fichier `.json`,
  - [x] Récupérer les films notés dans un fichier `.json`,
  - [x] Sauvegarde de la session,
+ - [ ] Support Chrome Driver

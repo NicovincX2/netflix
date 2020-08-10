@@ -11,7 +11,6 @@ from contextlib import contextmanager
 import json
 import os
 import pickle
-import time
 
 from selenium import webdriver
 from selenium.common.exceptions import (
@@ -162,6 +161,7 @@ class Netflix:
             download_file_name
             download_class_name
             download_dir
+            popup_close_class_name
         """
 
         if Netflix.download_class_name not in self.__driver.page_source:
@@ -172,20 +172,16 @@ class Netflix:
                 Netflix.download_class_name
             ).click()
 
-        #  Popup windows open
+        # Popup windows open, close it
         with handle_NoSuchElementException(Netflix.popup_close_class_name):
             self.__driver.find_element_by_class_name(
                 Netflix.popup_close_class_name
             ).click()
 
         # On attend la fin du téléchargement pour fermer le driver
-        # Si le fichier est déjà présent, il n'a pas le temps d'être téléchargé
-        download_file_path = os.path.join(
-            Netflix.download_dir, Netflix.download_file_name
+        print(
+            f"Fichier téléchargé: {os.path.join(Netflix.download_dir, Netflix.download_file_name)}"
         )
-        while not os.path.exists(download_file_path):
-            print(f"Fichier téléchargé: {download_file_path}")
-            time.sleep(1)
 
     def get_rated(self):
         """Récupération des titres évalués
@@ -316,7 +312,8 @@ class Netflix:
 
         self.current_profile = new_profile
 
-    def save_to_json(self, titles_dict, filename):
+    @classmethod
+    def save_to_json(cls, titles_dict, filename):
         """Sauvegarde de titles_dict dans le fichier .json filename
 
         Uses class attributes
@@ -324,6 +321,6 @@ class Netflix:
         """
 
         with open(
-            os.path.join(Netflix.download_dir, filename), "w", encoding="utf-8"
+            os.path.join(cls.download_dir, filename), "w", encoding="utf-8"
         ) as json_file:
             json.dump(titles_dict, json_file, ensure_ascii=False, indent=4)
