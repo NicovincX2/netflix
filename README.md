@@ -62,6 +62,8 @@ La commande suivante permet de lancer les tests :
 nox -rs tests-3.8
 ```
 
+# Fonctionnalités
+
  - [x] Choix du profil,
  - [x] Téléchargement du fichier `.csv` contenant les films vus,
  - [x] Récupérer les films vus dans un fichier `.json`,
