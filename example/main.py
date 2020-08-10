@@ -27,17 +27,14 @@ def main(headless):
     """Netflix Activity CLI"""
 
     with Netflix(headless, EMAIL, PASSWORD) as netflix:
-        current_profile = netflix.get_current_profile()
-        print(current_profile)
+        print(netflix.current_profile)
 
-        # netflix.set_profile("vincent")
+        # netflix.current_profile = "vincent"
         # netflix.view_activity()
-        # new_profile = netflix.get_current_profile()
-        # print(new_profile)
-        netflix.set_profile("nicolas")
+        # print(netflix.current_profile)
+        netflix.current_profile = "nicolas"
         netflix.view_activity()
-        new_profile = netflix.get_current_profile()
-        print(new_profile)
+        print(netflix.current_profile)
 
         # On peut ne pas noter des films/séries...
         rated_titles_dict = netflix.get_rated()

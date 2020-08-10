@@ -88,7 +88,7 @@ class Netflix:
 
         self.view_activity()
         # Initialisation du profil sur celui par défaut
-        self.current_profile = self.__get_current_profile()
+        self.__current_profile = self.__get_current_profile()
 
     def __enter__(self):
         return self
@@ -281,10 +281,12 @@ class Netflix:
                 .get_attribute("alt")
             )
 
-    def get_current_profile(self):
-        return self.current_profile
+    @property
+    def current_profile(self):
+        return self.__current_profile
 
-    def set_profile(self, new_profile):
+    @current_profile.setter
+    def current_profile(self, new_profile):
         """Changement de profil
 
         Uses class attributes
@@ -310,7 +312,7 @@ class Netflix:
             print("The new profile can't be found")
             raise TimeoutException
 
-        self.current_profile = new_profile
+        self.__current_profile = new_profile
 
     @classmethod
     def save_to_json(cls, titles_dict, filename):
